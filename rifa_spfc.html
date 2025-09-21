@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rifa Camisa Autografada - São Paulo FC</title>
+  <script>
+    let tickets = [];
+    let myTickets = [];
+    const TICKET_PRICE = 20.0;
+    const MAX_TICKETS = 500;
+    const RAFFLE_END = new Date("2025-10-31T23:59:59");
+
+    function updateCountdown() {
+      const now = new Date();
+      const diff = RAFFLE_END - now;
+      const el = document.getElementById("countdown");
+      if (diff <= 0) {
+        el.textContent = "Encerrada";
+        return;
+      }
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hrs = Math.floor((diff / (1000 * 60 * 60)) % 24);
+      const mins = Math.floor((diff / (1000 * 60)) % 60);
+      const secs = Math.floor((diff / 1000) % 60);
+      el.textContent = `${days}d ${hrs}h ${mins}m ${secs}s`;
+    }
+    setInterval(updateCountdown, 1000);
+    window.onload = updateCountdown;
+
+    function generateTicketId(n) {
+      return `SPFC-${String(n).padStart(4, '0')}`;
+    }
+
+    function handlePurchase() {
+      const name = document.getElementById("name").value.trim();
+      const email = document.getElementById("email").value.trim();
+      const qty = parseInt(document.getElementById("quantity").value);
+      const msg = document.getElementById("message");
+      if (!name || !email) {
+        msg.textContent = "Preencha nome e e-mail.";
+        return;
+      }
+      if (tickets.length + qty > MAX_TICKETS) {
+        msg.textContent = "Número de bilhetes excede o limite disponível.";
+        return;
+      }
+      let newTickets = [];
+      for (let i = 0; i < qty; i++) {
+        const id = generateTicketId(tickets.length + newTickets.length + 1);
+        newTickets.push({ id, buyerName: name, email });
+      }
+      tickets = [...tickets, ...newTickets];
+      myTickets = [...myTickets, ...newTickets.map(t => t.id)];
+      document.getElementById("sold").textContent = tickets.length;
+      msg.textContent = `Compra simulada: ${qty} bilhete(s) gerado(s).`;
+      renderMyTickets();
+    }
+
+    function renderMyTickets() {
+      const list = document.getElementById("myTickets");
+      list.innerHTML = "";
+      if (myTickets.length === 0) {
+        list.innerHTML = "<p>Você ainda não comprou bilhetes nesta sessão.</p>";
+        return;
+      }
+      myTickets.forEach(t => {
+        const div = document.createElement("div");
+        div.className = "ticket";
+        div.textContent = t;
+        list.appendChild(div);
+      });
+    }
+
+    function adminDraw() {
+      const key = document.getElementById("adminkey").value;
+      if (key !== "Rifa camisa2025") {
+        alert("Chave de administrador inválida.");
+        return;
+      }
+      if (tickets.length === 0) {
+        alert("Ainda não há bilhetes vendidos.");
+        return;
+      }
+      const idx = Math.floor(Math.random() * tickets.length);
+      const winner = tickets[idx];
+      const box = document.getElementById("winner");
+      box.innerHTML = `<strong>Vencedor:</strong> ${winner.buyerName}<br>Ticket: ${winner.id}<br>Email: ${winner.email}`;
+    }
+
+    function exportCSV() {
+      let csv = "ticket_id,buyer_name,email\n";
+      tickets.forEach(t => {
+        csv += `${t.id},${t.buyerName},${t.email}\n`;
+      });
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "tickets_rifa_spfc.csv";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  </script>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f9f9f9; margin: 0; padding: 20px; }
+    .container { max-width: 900px; margin: auto; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+    h1, h2, h3 { color: #222; }
+    .ticket { border: 1px solid #ccc; padding: 5px; margin: 4px; display: inline-block; border-radius: 4px; }
+    .btn { padding: 8px 14px; border: none; border-radius: 6px; cursor: pointer; }
+    .btn-red { background: #b91c1c; color: white; }
+    .btn-black { background: #000; color: white; }
+    .btn-outline { border: 1px solid #ccc; background: #fff; }
+    .form-group { margin: 10px 0; }
+    input { padding: 8px; border: 1px solid #ccc; border-radius: 6px; width: 100%; }
+    .flex { display: flex; gap: 10px; }
+    .small { font-size: 0.85em; color: #666; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎉 Rifa Camisa Autografada - São Paulo FC</h1>
+    <p>Organizador: <strong>Marcos Aurélio</strong></p>
+    <img src="https://via.placeholder.com/600x600.png?text=Camisa+Autografada+SPFC" alt="Camisa" style="width:100%; max-width:400px; border-radius:12px;">
+    <p><strong>Preço:</strong> R$ 20,00 por bilhete</p>
+    <p><strong>Tempo restante:</strong> <span id="countdown"></span></p>
+    <p>Bilhetes vendidos: <span id="sold">0</span> / 500</p>
+
+    <h2>Compre seus bilhetes</h2>
+    <div class="form-group"><input id="name" placeholder="Seu nome"></div>
+    <div class="form-group"><input id="email" placeholder="Seu e-mail" type="email"></div>
+    <div class="form-group"><input id="quantity" type="number" value="1" min="1" max="10"></div>
+    <button class="btn btn-red" onclick="handlePurchase()">Comprar (simulação)</button>
+    <p id="message" style="color:green;"></p>
+
+    <h3>Seus bilhetes</h3>
+    <div id="myTickets"></div>
+
+    <h2>Painel do Organizador</h2>
+    <input id="adminkey" placeholder="Chave admin">
+    <div class="flex">
+      <button class="btn btn-black" onclick="adminDraw()">Sortear vencedor</button>
+      <button class="btn btn-outline" onclick="exportCSV()">Exportar CSV</button>
+    </div>
+    <div id="winner" style="margin-top:10px; color:green;"></div>
+
+    <h2>Regras</h2>
+    <ol>
+      <li>Promoção válida até 31/10/2025 23:59.</li>
+      <li>Prêmio: 1 camiseta autografada do São Paulo FC. Imagem ilustrativa.</li>
+      <li>O vencedor será divulgado nesta página. Organizador: Marcos Aurélio.</li>
+      <li>Fraudes desclassificam participantes.</li>
+      <li>Envio do prêmio por conta do organizador.</li>
+    </ol>
+
+    <footer class="small">© 2025 Rifa SPFC • Organizador: Marcos Aurélio</footer>
+  </div>
+</body>
+</html>
